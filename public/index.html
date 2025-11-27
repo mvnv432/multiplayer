@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DOM Battle</title>
+    <link rel="stylesheet" href="./css/homeMenu.css" />
+</head>
+<body>
+
+    <div id="menu">
+        <h1>Tiny Swords</h1>
+        <button id="joinBtn">Create User to Join Game</button>
+    </div>
+    <div id="username-popup" class="hidden">
+        <div id="popup-box">
+            <h2>Create Username</h2>
+            <input id="usernameInput" type="text" placeholder="Enter username">
+            <button id="createBtn">Join Game</button>
+            <p id="error"></p>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="menu/homeMenu.js"></script>
+
+    <script>
+        const popup = document.getElementById("username-popup");
+
+        document.getElementById('joinBtn').addEventListener('click', () => {
+            popup.classList.remove("hidden"); // show popup
+        });
+    </script>
+
+</body>
+</html>
+

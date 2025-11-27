@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Game</title>
+    <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+    <h2>Tiny Swords</h2>
+    <div id="game-timer">0:00</div>
+    <div id="game-area">
+        <div id="player"></div>
+    </div>
+    
+
+    <button id="quitBtn">Quit</button>
+
+        <div id="lobby-overlay" class="hidden">
+            <div id="lobby-box">
+                <h2>Lobby</h2>
+                <p id="currentUser"></p>
+                <!-- Host notice -->
+                <p id="hostNotice"></p>
+        
+                <!-- Player list -->
+                <h3>Players in Lobby:</h3>
+                <ul id="playerList"></ul>
+        
+                <!-- Start game button (host only) -->
+                <button id="startBtn" class="hidden">Start Game</button>
+
+            </div>
+        </div>
+
+        <div id="win-screen" class="hidden">
+            <div class="win-box">
+                <h1 id="winner-name"></h1>
+                <p id="winner-time"></p>
+                <button id="back-to-menu">Back to Menu</button>
+            </div>
+        </div>
+
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="module" src="./menu/lobby.js"></script>
+    <script type="module" src="client.js"></script>
+    
+</body>
+</html>

@@ -1,0 +1,184 @@
+body {
+    background: #222;
+    color: #2b2a2a;
+    font-family: sans-serif;
+    text-align: center;
+}
+
+#menu {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    background-color: #4caf50;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    margin-top: 20px;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+#game-area {
+    position: relative;
+    width: 800px;
+    height: 600px;
+    background: #333;
+    margin: 2rem auto;
+    border: 2px solid #555;
+    overflow: visible;
+}
+
+/* #player For local, .player for others */
+#player, 
+.player {
+    position: absolute;
+    width: 96px;
+    height: 96px;
+    border-radius: 8px;
+
+    /* Pixelperfect rendering */
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+
+    /* GPU rendering */
+    will-change: transform;
+    transform-origin: center center;
+    transform: translateZ(0);
+
+    /* No easing */
+    transition: none;
+
+    z-index: 10;
+}
+
+/* Stunned animation (blinking white) */
+.blink {
+    animation: blink-hit 0.2s linear infinite;
+}
+
+@keyframes blink-hit {
+    0% { filter: brightness(2); }
+    50% { filter: brightness(1); }
+    100% { filter: brightness(2); }
+}
+
+#lobby-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+#lobby-overlay.hidden {
+    display: none;
+}
+
+#lobby-box {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+button:disabled {
+    background-color: #777 !important;
+    cursor: not-allowed;
+    opacity: 0.6;
+    color: #ccc;
+}
+
+.hp-bar {
+    position: absolute;
+    bottom: 73px;      /* above head */
+    left: 32px;
+    width: 30px;
+    height: 1px;
+    background: #222;
+    border: 1px solid #000;
+}
+
+.hp-bar-inner {
+    height: 100%;
+    background: red;
+    width: 100%;
+}
+
+/* WIN SCREEN */
+#win-screen {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.8s ease;
+}
+
+#win-screen.show {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.win-box {
+    background: #222;
+    padding: 30px 40px;
+    border-radius: 12px;
+    text-align: center;
+    color: white;
+    font-family: sans-serif;
+    animation: popIn 0.3s ease;
+}
+
+@keyframes popIn {
+    from {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+#back-to-menu {
+    margin-top: 20px;
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    background: #ffd600;
+}
+
+#game-timer {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.4);
+    color: white;
+    font-size: 22px;
+    border-radius: 6px;
+    font-family: sans-serif;
+    z-index: 2000;
+}
