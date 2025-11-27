@@ -2,11 +2,19 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 
+import path from "path";
+import { fileURLToPath } from "url";
+
 const app = express();
 const server = createServer(app);
 const io = new Server(server);
 
-app.use(express.static('public'));
+// Needed because ES modules don't have __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Serve static files
+app.use(express.static(path.join(__dirname, "../public")));
 
 const players = {};
 const users = {};
