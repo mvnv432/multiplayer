@@ -24,6 +24,8 @@ const socket = window.sharedSocket;
 window.currentLobbyId = localStorage.getItem("currentLobbyId");
 
 let gameIsOver = false;
+const MOVE_RATE = 20; // per second
+let lastMoveSend = 0;
 
 const sheepSound = document.getElementById("sheepSound");
 const swordSwing = document.getElementById("swordSwing");
@@ -229,8 +231,34 @@ let localDead = false;
    // Other players in memory
 const others = {}; // { id: { el, x, y, tx, ty, t } }
 
-// // Game loop
+function getInterpolatedPosition(p, renderTime) {
+    const h = p.history;
+    if (!h || h.length === 0) return { x: p.x ?? 0, y: p.y ?? 0 };
 
+    // If we're looking too far back, return earliest snapshot
+    if (renderTime < h[0].t) {
+        return { x: h[0].x, y: h[0].y };
+    }
+
+    // Find two snapshots surrounding renderTime
+    for (let i = 0; i < h.length - 1; i++) {
+        const a = h[i];
+        const b = h[i + 1];
+
+        if (renderTime >= a.t && renderTime <= b.t) {
+            const ratio = (renderTime - a.t) / (b.t - a.t);
+            return {
+                x: a.x + (b.x - a.x) * ratio,
+                y: a.y + (b.y - a.y) * ratio
+            };
+        }
+    }
+
+    // If renderTime is beyond the latest snapshot → return last
+    return h[h.length - 1];
+}
+
+// Game loop
 function update(time) {
     // Pause game - FULL STOP
     if (window.gamePaused) {
@@ -373,8 +401,12 @@ function update(time) {
     }
 
     // Send position to server
+
     if (!window.gameFrozen && !window.gamePaused) {
+        if (performance.now() - lastMoveSend > (1000 / MOVE_RATE)) {
         socket.emit("move", { x, y });
+        lastMoveSend = performance.now();
+        }
     }
 
     // UPDATE OTHER PLAYERS LOOP
@@ -390,15 +422,21 @@ function update(time) {
             continue; // skip run/idle/attack logic
         }
 
-        // Interpolation
-        if (!window.gameFrozen && !window.gamePaused) {
-            p.t = Math.min(p.t + delta * 10, 1);
-        }
-        const ix = p.x + (p.tx - p.x) * p.t;
-        const iy = p.y + (p.ty - p.y) * p.t;
+        // Smooth interpolation from buffered snapshots
+        const renderTimestamp = performance.now() - 100;  // 60ms delay window
+        const { x: ix, y: iy } = getInterpolatedPosition(p, renderTimestamp);
 
-        // Determine if moving
-        const moving = (Math.abs(p.tx - p.x) > 0.5 || Math.abs(p.ty - p.y) > 0.5);
+        // Initialise previous drawn position if missing
+        if (p.prevX === undefined) {
+            p.prevX = ix;
+            p.prevY = iy;
+        }
+
+        // Determine if moving based on interpolated movement
+        const moving = (
+            Math.abs(ix - p.prevX) > 0.5 ||
+            Math.abs(iy - p.prevY) > 0.5
+        );
 
         if (moving && !p.runningSound) {
             p.runningSound = runningSound.cloneNode();
@@ -418,7 +456,21 @@ function update(time) {
         } else {
             p.nameTag.classList.remove("name-no-flip");
         }
+
+        // Animation choice only when needed
+        if (p.anim.current === "attack" || p.anim.isAttacking) {
+            // Dont switch yet
+        } else {
+            if (moving) {
+                if (p.anim.current !== "run") p.anim._play("run");
+            } else {
+                if (p.anim.current !== "idle") p.anim._play("idle");
+            }
+        }
         
+        // Flip direction using LAST movement direction
+        if (ix < p.prevX)      p.anim.lastFaceLeft = true;
+        else if (ix > p.prevX) p.anim.lastFaceLeft = false;
 
         // If remotes stunned
         if (p.stunned && performance.now() < p.stunUntil) {
@@ -433,22 +485,6 @@ function update(time) {
             stopBlink(p.el);
         }
 
-        // Animation choice only when needed
-        if (p.anim.current === "attack" || p.anim.isAttacking) {
-            // Dont switch yet
-        } else {
-            // Handle idle/run normally
-            if (moving) {
-                if (p.anim.current !== "run") p.anim._play("run");
-            } else {
-                if (p.anim.current !== "idle") p.anim._play("idle");
-            }
-        }
-
-        // Flip direction using lastFaceLeft
-        if (p.tx < p.x)    p.anim.lastFaceLeft = true;
-        else if (p.tx > p.x) p.anim.lastFaceLeft = false;
-
         // Advance animation frames
         if (!window.gameFrozen && !window.gamePaused) {
             p.anim.update(delta);
@@ -462,11 +498,9 @@ function update(time) {
         // Apply full animation transform
         p.el.style.transform = p.anim.getTransform(ix, iy);
 
-        // lock if finished
-        if (p.t >= 1) {
-            p.x = p.tx;
-            p.y = p.ty;
-        }
+        // Save for next frame
+        p.prevX = ix;
+        p.prevY = iy;
     }
 
     requestAnimationFrame(update);
@@ -531,16 +565,30 @@ socket.on('players', ({ lobbyId, data }) => {
     requestAnimationFrame(update);
 });
 
+let lastNetworkUpdate = performance.now();
+
 socket.on('playerMoved', ({ lobbyId, id, pos }) => {
     if (lobbyId !== window.currentLobbyId) return;
 
     const p = others[id];
-    if (p) {
-        // set interpolation targets
-        p.x = p.tx; p.y = p.ty;
-        p.tx = pos.x;
-        p.ty = pos.y;
-        p.t = 0;
+    if (!p) return;
+
+    const now = performance.now();
+
+    // timing logs
+    // console.log("Δ Server update:", (now - lastNetworkUpdate).toFixed(1), "ms");
+    lastNetworkUpdate = now;
+
+    // snapshot of movement history
+    p.history.push({
+        x: pos.x,
+        y: pos.y,
+        t: now
+    });
+
+    // Limit buffer size
+    if (p.history.length > 30) {
+        p.history.shift();
     }
 });
 

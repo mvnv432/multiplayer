@@ -4,7 +4,9 @@ export function resizeGame() {
 
     const scaleX = window.innerWidth / designW;
     const scaleY = window.innerHeight / designH;
-    const scale = Math.min(scaleX, scaleY);
+
+    let scale = Math.min(scaleX, scaleY);
+    scale = Math.round(scale * 20) / 20; 
 
     const wrapper = document.getElementById("game-wrapper");
     const tiles = document.getElementById("arena-tiles");

@@ -42,6 +42,7 @@ export function addOtherPlayer(id, pos, color, gameArea, others, getUsernameById
         stunned: false,
         stunUntil: 0,
         invulnUntil: 0,
+        history: [],
     };
 
     updateHPBar(others[id]);
