@@ -363,11 +363,7 @@ function update(time) {
     }
 
     // Apply transform (movement + flip)
-    player.style.transform = anim.getTransform(
-        Math.round(x),
-        Math.round(y)
-    );
-    
+    player.style.transform = anim.getTransform(x, y);
 
     // LOCAL name tag flip
     if (anim.lastFaceLeft) {
@@ -402,7 +398,7 @@ function update(time) {
         const iy = p.y + (p.ty - p.y) * p.t;
 
         // Determine if moving
-        const moving = (Math.abs(p.tx - p.x) > 2 || Math.abs(p.ty - p.y) > 2);
+        const moving = (Math.abs(p.tx - p.x) > 0.5 || Math.abs(p.ty - p.y) > 0.5);
 
         if (moving && !p.runningSound) {
             p.runningSound = runningSound.cloneNode();
@@ -464,16 +460,12 @@ function update(time) {
         }
 
         // Apply full animation transform
-        p.el.style.transform = p.anim.getTransform(
-            Math.round(ix),
-            Math.round(iy)
-        );
-        
+        p.el.style.transform = p.anim.getTransform(ix, iy);
+
         // lock if finished
         if (p.t >= 1) {
             p.x = p.tx;
             p.y = p.ty;
-            p.t = 0.999;
         }
     }
 
@@ -539,8 +531,16 @@ socket.on('players', ({ lobbyId, data }) => {
     requestAnimationFrame(update);
 });
 
+let lastNetworkUpdate = performance.now();
+
 socket.on('playerMoved', ({ lobbyId, id, pos }) => {
     if (lobbyId !== window.currentLobbyId) return;
+
+    // ★ LOG NETWORK TIMING HERE
+    const now = performance.now();
+    console.log("Δ Server update:", (now - lastNetworkUpdate).toFixed(1), "ms");
+    lastNetworkUpdate = now;
+    // ----------------------------------------
 
     const p = others[id];
     if (p) {
