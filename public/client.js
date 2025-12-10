@@ -363,7 +363,11 @@ function update(time) {
     }
 
     // Apply transform (movement + flip)
-    player.style.transform = anim.getTransform(x, y);
+    player.style.transform = anim.getTransform(
+        Math.round(x),
+        Math.round(y)
+    );
+    
 
     // LOCAL name tag flip
     if (anim.lastFaceLeft) {
@@ -398,7 +402,7 @@ function update(time) {
         const iy = p.y + (p.ty - p.y) * p.t;
 
         // Determine if moving
-        const moving = (Math.abs(p.tx - p.x) > 0.5 || Math.abs(p.ty - p.y) > 0.5);
+        const moving = (Math.abs(p.tx - p.x) > 2 || Math.abs(p.ty - p.y) > 2);
 
         if (moving && !p.runningSound) {
             p.runningSound = runningSound.cloneNode();
@@ -460,12 +464,16 @@ function update(time) {
         }
 
         // Apply full animation transform
-        p.el.style.transform = p.anim.getTransform(ix, iy);
-
+        p.el.style.transform = p.anim.getTransform(
+            Math.round(ix),
+            Math.round(iy)
+        );
+        
         // lock if finished
         if (p.t >= 1) {
             p.x = p.tx;
             p.y = p.ty;
+            p.t = 0.999;
         }
     }
 
