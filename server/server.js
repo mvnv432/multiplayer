@@ -14,6 +14,10 @@ const COLORS = ['red', 'blue', 'black', 'yellow'];
 let lobbies = [];
 let lobbyCounter = 1;
 
+setInterval(() => {
+  console.log("tick", Date.now());
+}, 50);
+
 io.on('connection', (socket) => {
   console.log('Connected:', socket.id);
   
