@@ -173,21 +173,21 @@ io.on('connection', (socket) => {
 
   // Movement
     socket.on('move', (pos) => {
+      const p = players[socket.id];
+      if (!p) return;
 
-    const p = players[socket.id];
-    if (!p) return;
-
-    p.x = pos.x;
-    p.y = pos.y;
+      p.x = pos.x;
+      p.y = pos.y;
 
       // Update position only. Dont send color to keep it
       players[socket.id].x = p.x;
       players[socket.id].y = p.y;
-      
-      io.to(p.lobbyId).emit('playerMoved', { 
+        
+      socket.broadcast.to(p.lobbyId).emit('playerMoved', { 
         lobbyId: p.lobbyId, 
         id: socket.id, 
-        pos: { x: p.x, y: p.y} });
+        pos: { x: p.x, y: p.y }
+      });
     });
 
     // Server validates + sends pickUp

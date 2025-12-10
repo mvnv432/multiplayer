@@ -531,16 +531,8 @@ socket.on('players', ({ lobbyId, data }) => {
     requestAnimationFrame(update);
 });
 
-let lastNetworkUpdate = performance.now();
-
 socket.on('playerMoved', ({ lobbyId, id, pos }) => {
     if (lobbyId !== window.currentLobbyId) return;
-
-    // ★ LOG NETWORK TIMING HERE
-    const now = performance.now();
-    console.log("Δ Server update:", (now - lastNetworkUpdate).toFixed(1), "ms");
-    lastNetworkUpdate = now;
-    // ----------------------------------------
 
     const p = others[id];
     if (p) {
