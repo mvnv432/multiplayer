@@ -84,7 +84,7 @@ button:hover {
     image-rendering: crisp-edges;
 
     /* GPU rendering */
-    will-change: transform;
+    will-change: transform, background-position;
     transform-origin: center center;
     transform: translateZ(0);
 

@@ -342,68 +342,87 @@ io.on('connection', (socket) => {
   socket.on("disconnect", () => {
     console.log("Player disconnected:", socket.id);
 
+    // Remove from users list
     delete users[socket.id];
 
-    let lobby = lobbies.find(l => 
-      l.players.some(p => p.id === socket.id)
+    // Find the lobby the disconnecting player was in
+    let lobby = lobbies.find(l =>
+        l.players.some(p => p.id === socket.id)
     );
 
     if (!lobby) {
-      console.log("Player was not in a lobby.");
-      return;
+        console.log("Player was not in a lobby.");
+        return;
     }
 
+    // Remove player from this lobby
     lobby.players = lobby.players.filter(p => p.id !== socket.id);
 
-    // If only ONE player remains, end the game and kick them
-    if (lobby.players.length === 1) {
-      const lastPlayerId = lobby.players[0].id;
-
-      console.log("Only one player remains, kicking to lobby:", lastPlayerId);
-
-    io.to(lobby.id).emit("gameOver", {
-        lobbyId: lobby.id,
-        winnerName: players[lastPlayerId].userName,
-        roundTime: Math.floor((Date.now() - lobby.roundStartTime) / 1000)
-    });
-
-      lobby.started = false;
-    }
-
-
-    if (lobby.hostId === socket.id) {
-      lobby.hostId = lobby.players.length > 0 
-          ? lobby.players[0].id 
-          : null;
-    }
-    
-    if (lobby.players.length === 0) {
-      console.log("Lobby empty → removing:", lobby.id);
-      lobbies = lobbies.filter(l => l.id !== lobby.id);
-    } else {
-        // Otherwise update remaining players in the lobby
-        io.to(lobby.id).emit("lobbyUpdate", {
-            players: lobby.players,
-            hostId: lobby.hostId,
-            readiness: lobby.readiness
-        });
-    }
-
-    // Cleans game
+    // Remove from global players map
     delete players[socket.id];
 
-    // Clean lobby readiness
-    if (lobby.readiness[socket.id] !== undefined) {
-      delete lobby.readiness[socket.id];
+
+    // Case where only one player remains
+    if (lobby.players.length === 1) {
+        const lastPlayerId = lobby.players[0].id;
+
+        const winnerName =
+            users[lastPlayerId]?.userName ||
+            users[lastPlayerId]?.username ||
+            players[lastPlayerId]?.userName ||
+            "Player";
+
+        console.log("One player remains → declaring winner and closing lobby.");
+
+        // Send win screen to the winner only
+        io.to(lastPlayerId).emit("gameOver", {
+            lobbyId: lobby.id,
+            winnerId: lastPlayerId,
+            winnerName,
+            roundTime: Math.floor((Date.now() - lobby.roundStartTime) / 1000)
+        });
+
+        // Stop timer
+        clearInterval(lobby.timerInterval);
+
+        // Remove winner from lobby list (so they don't remain stuck in a lobby)
+        lobby.players = [];
+
+        // Remove lobby from the global lobbies array
+        lobbies = lobbies.filter(l => l.id !== lobby.id);
+
+        // Remove lobbyId reference from player
+        if (players[lastPlayerId]) {
+            delete players[lastPlayerId].lobbyId;
+        }
+
+        return; //stop here
     }
 
-    if (users[socket.id]?.lobbyId) {
-      io.to(users[socket.id].lobbyId).emit("playerLeft", {
-          lobbyId: users[socket.id].lobbyId,
-          id: socket.id
-      });
+
+    // Case where lobby becomes empty
+
+    if (lobby.players.length === 0) {
+        console.log("Lobby empty → removing:", lobby.id);
+        lobbies = lobbies.filter(l => l.id !== lobby.id);
+        return;
     }
-  });
+
+
+    // Case normal disconnect
+
+    // Update host if needed
+    if (lobby.hostId === socket.id) {
+        lobby.hostId = lobby.players[0]?.id || null;
+    }
+
+    // Send updated lobby state
+    io.to(lobby.id).emit("lobbyUpdate", {
+        players: lobby.players,
+        hostId: lobby.hostId,
+        readiness: lobby.readiness
+    });
+});
 
 });
 

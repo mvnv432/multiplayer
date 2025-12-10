@@ -132,10 +132,11 @@ async function preloadAssets() {
     ];
 
     await Promise.all(
-        assets.map(src => new Promise(resolve => {
-            const img = new Image();
-            img.onload = resolve;
-            img.src = src;
-        }))
+        assets.map(src => new Promise(async resolve => {
+        const img = new Image();
+        img.src = src;
+        await img.decode();  // forces the browser to fully decode and rasterize the image BEFORE the animation uses it.
+        resolve();
+    }))
     );
 }

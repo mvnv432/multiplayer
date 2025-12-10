@@ -123,7 +123,6 @@ export class SpriteAnimation {
         // Use CORRECT scaled frame width here
         const posX = -this.frame * this.scaledFrameWidth;
         this.el.style.backgroundPosition = `${posX}px 0px`;
-        this.el.style.backgroundSize = "auto 100%";
     }
 
     // Movement + flipping transform
