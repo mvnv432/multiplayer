@@ -1,0 +1,56 @@
+
+#ui-layer {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    z-index: 10000;
+}
+
+.ui-btn,
+#game-timer {
+    padding: 7px 14px;
+    font-size: 1rem;
+    cursor: pointer;
+
+    background: #8c6b29;
+    background-image: linear-gradient(#bfa665, #8c6b29);
+    background-blend-mode: overlay;
+
+    border: 3px solid #5c4214;
+    border-radius: 12px;
+
+    color: #fff7d1;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+
+    box-shadow:
+        0 2px 0 #4a3510,
+        0 3px 5px rgba(0,0,0,0.3);
+
+    transition:
+        transform 0.1s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+.ui-btn:hover,
+#game-timer:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 6px 0 #4a3510,
+        0 10px 14px rgba(0,0,0,0.35);
+}
+
+.ui-btn:active,
+#game-timer:active {
+    transform: translateY(2px);
+    box-shadow:
+        0 2px 0 #4a3510,
+        0 4px 6px rgba(0,0,0,0.25);
+}

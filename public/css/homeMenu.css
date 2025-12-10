@@ -1,21 +1,830 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: sans-serif;
+    background: linear-gradient(#259275, #84ccfc);
+    overflow: hidden;
+    position: relative;
+    z-index: 0;
+}
+
+/* --- CENTERED MENU LAYOUT --- */
+#menu {
+    top: 600px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;        /* Center vertically */
+    align-items: center;            /* Center horizontally */
+    text-align: center;
+    position: relative;
+    z-index: 10;  /* MENU stays on top */
+}
+
+.tinySwordsLogo {
+    position: absolute;
+    top: 20%;                 
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 999;
+    pointer-events: none;
+    width: auto; /* this is fine */
+}
+
+.tinySwordsLogo img {
+    width: 230px;
+    height: auto;
+
+    transform: scale(2.5); 
+    transform-origin: center;
+
+    opacity: 0;
+    animation: fadeLogo 3s ease forwards;
+    image-rendering: pixelated;
+}
+
+@keyframes fadeLogo {
+    to { opacity: 2; }
+}
+
+.joinBtn {
+    display: block;
+    margin: 40px auto;
+    margin-left: 41%;            
+
+    padding: 18px 32px;
+    font-size: 1.1rem;
+    cursor: pointer;
+
+    background: #8c6b29;
+    background-image:
+        linear-gradient(#bfa665, #8c6b29);
+    background-blend-mode: overlay;
+    border: 3px solid #5c4214;
+    border-radius: 12px;
+
+    color: #fff7d1;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+
+    box-shadow: 0 4px 0 #4a3510,
+                0 6px 10px rgba(0,0,0,0.3);
+
+    transition: 
+        transform 0.1s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+.createBtn {
+    display: block;
+    margin: 40px auto;
+    margin-left: 20%;            
+
+    padding: 18px 32px;
+    font-size: 1.1rem;
+    cursor: pointer;
+
+    background: #8c6b29;
+    background-image:
+        linear-gradient(#bfa665, #8c6b29);
+    background-blend-mode: overlay;
+    border: 3px solid #5c4214;
+    border-radius: 12px;
+
+    color: #fff7d1;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+
+    box-shadow: 0 4px 0 #4a3510,
+                0 6px 10px rgba(0,0,0,0.3);
+
+    transition: 
+        transform 0.1s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+button:hover {
+    background-color: #a48334;
+    transform: translateY(-2px);
+    box-shadow: 
+        0 6px 0 #4a3510,
+        0 8px 14px rgba(0,0,0,0.4);
+}
+
+button:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #4a3510;
+}
+
+
+/* Disabled button (used later in lobby) */
+button:disabled {
+    background-color: #777 !important;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+#username-section {
+    margin-top: 2%;
+    font-family: 'Cinzel', serif;
+    text-align: center;
+}
+
+/* Title */
+#username-section h2 {
+    margin-bottom: 5px;
+    font-size: 1.8rem;
+    color: #000000;
+    text-shadow: 1px 1px 2px #00000066;
+}
+
+/* Input field styling (medieval stone-like) */
+#username-section input {
+    padding: 12px 16px;
+    width: 240px;
+
+    font-size: 1rem;
+    font-family: 'Cinzel', serif;
+    color: #3a2b12;
+
+    border: 3px solid #5c4214;     /* dark carved border */
+    border-radius: 10px;
+
+    background: #c8b27a;           /* warm parchment/stone color */
+    background-image: linear-gradient(#e3d4a1, #c8b27a);
+    box-shadow: inset 0 2px 4px #00000033;
+
+    outline: none;
+    transition: box-shadow 0.2s, transform 0.1s;
+}
+
+#username-section input:focus {
+    box-shadow: 0 0 8px #f6e7b8, inset 0 2px 4px #00000055;
+    transform: translateY(-1px);
+}
+
+/* Medieval-styled Join Game button */
+#username-section button {
+    padding: 14px 28px;
+    margin-top: 9%;
+
+    background: #8c6b29;
+    background-image: linear-gradient(#bfa665, #8c6b29);
+    background-blend-mode: overlay;
+
+    border: 3px solid #5c4214;
+    border-radius: 12px;
+
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    color: #fff7d1;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+
+    cursor: pointer;
+    box-shadow: 0 4px 0 #4a3510, 0 6px 10px rgba(0,0,0,0.3);
+
+    transition: transform 0.1s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+#username-section button:hover {
+    background-color: #a48334;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #4a3510, 0 8px 14px rgba(0,0,0,0.4);
+}
+
+#username-section button:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #4a3510;
+}
+
+
+/* Error text */
+#error {
+    color: black;
+    background-color: #a48334;
+    font-weight: bold;
+    font-style: italic;
+    margin-top: 10px;
+    font-size: 20px;
+}
+
+/* --- UTILITY CLASSES --- */
 .hidden {
     display: none !important;
 }
 
-#username-popup {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
+/* --- TILE LAYER (BEHIND MENU) --- */
+#tiles {
+    position: absolute;
+    top: 200px;
+    left: 170px;
+    z-index: 1;
+    width: 800px;
+    height: 600px;
+
+    image-rendering: pixelated;
 }
 
-#popup-box {
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    width: 300px;
-    text-align: center;
+.corner-top-left {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile1.png");
+    background-position: 0 0;
+    background-size: 576px 384px;
+    position: absolute;
+    top: 50px;
+    left: 50px;
+    z-index: 1;
 }
+
+.firstlayer-corner-down {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile1.png");
+    background-position: 0px -128px;
+    background-size: 576px 384px;
+    position: absolute;
+    top: 50px;
+    left: 50px;
+    z-index: 1;
+}
+
+.down-center {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile1.png");
+    background-position: -64px -128px;
+    background-size: 576px 384px;
+    position: absolute;
+    top: 50px;
+    left: 50px;
+    z-index: 1;
+}
+
+.corner-down {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile1.png");
+    background-position: -128px -128px;
+    background-size: 576px 384px;
+    position: absolute;
+    top: 50px;
+    left: 50px;
+    z-index: 1;
+}
+
+.grass-center-top {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile1.png");
+    background-position: -64px 0px; /* next tile to the right */
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+
+.corner-top-right {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile1.png");
+    background-position: -128px 0px; /* next tile to the right */
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+.corner-row2 {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile2.png");
+    background-position: -128px 0px; /* next tile to the right */
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+.sides-left {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile1.png");
+    background-size: 576px 384px;
+    background-position: 0px -64px; /* left edge tile */
+    position: absolute;
+    z-index: 1;
+}
+
+.sides-right {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile1.png");
+    background-size: 576px 384px;
+    background-position: -128px -64px; 
+    position: absolute;
+    z-index: 1;
+}
+
+.corner-second-row {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile2.png");
+    background-position: 0 0;
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+.grass-center-row2 {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile2.png");
+    background-position: -64px 0px;
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+
+.island-row1 {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile2.png");
+    background-size: 576px 384px;   /* full sheet size */
+    background-position: -192px -192px; /* column 0, row 3 */
+    position: absolute;
+    z-index: 2;  
+}
+
+.island-center {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile2.png");
+    background-size: 576px 384px; 
+    background-position: -64px -192px; 
+    position: absolute;
+    z-index: 2;  
+}
+
+.island-right-side{
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile2.png");
+    background-size: 576px 384px; 
+    background-position: -128px -192px; 
+    position: absolute;
+    z-index: 2;  
+}
+
+.island-left-side{
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile2.png");
+    background-size: 576px 384px; 
+    background-position: 0px -192px; 
+    position: absolute;
+    z-index: 2;  
+}
+
+
+.grass-center-row2 {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile2.png");
+    background-position: -64px -64px;
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+.grass-center {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile1.png");
+    background-position: -64px -64px;
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+.grass-top-row2 {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile2.png");
+    background-position: -64px 0px; /* next tile to the right */
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+/* --- second layer --- */
+
+.corner-top-left-secondL {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile2.png");
+    background-position: -320px 0px;
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+.cliff-side-left {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile2.png");
+    background-position: -320px -64px; 
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+.cliff-before-bottom {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile2.png");
+    background-position: -320px -128px; 
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+.cliff-bottom {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile2.png");
+    background-position: -320px -192px; 
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+.cliff-center-top {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile2.png");
+    background-position: -384px 0px; 
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+.cliff-center {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile2.png");
+    background-position: -384px -64px; 
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+.cliff-center-before-bottom {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile2.png");
+    background-position: -384px -128px; 
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+.cliff-center-bottom{
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile2.png");
+    background-position: -384px -192px; 
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+.cliff-corner-top-right{
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile2.png");
+    background-position: -448px 0px; 
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+.cliff-corner-down-right {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile2.png");
+    background-position: -448px -128px; 
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+.cliff-side-right {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile2.png");
+    background-position: -448px -64px; 
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+.cliff-slope-down {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile2.png");
+    background-position: -192px -320px; 
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+.cliff-slope {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile2.png");
+    background-position: -192px -256px; 
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+.cliff-slope-left {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile2.png");
+    background-position: -0px -256px; 
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+.cliff-slope-down-left {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile2.png");
+    background-position: -0px -320px; 
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+.pine {
+    width: 128px;        /* tree width (adjust as needed) */
+    height: 128px;       /* tree height (adjust as needed) */
+    background-image: url("../assets/trees/Tree1.png");
+    background-size: 1024px 128px; /* 8 frames * 128px = 1024px */
+    position: absolute;
+    z-index: 3; /* above tile */
+    animation: treeMove 1s steps(8) infinite;
+}
+
+.pine.down16 { transform: translateY(32px); }
+
+.pine-tall {
+    width: 128px;        /* tree width (adjust as needed) */
+    height: 128px;       /* tree height (adjust as needed) */
+    background-image: url("../assets/trees/Tree2.png");
+    background-size: 1024px 128px; /* 8 frames * 128px = 1024px */
+    position: absolute;
+    z-index: 3; /* above tile */
+    animation: treeMove 1s steps(8) infinite;
+}
+
+
+@keyframes treeMove {
+    from {
+        background-position: 0 0;
+    }
+    to {
+        background-position: -1024px 0;
+    }
+}
+
+
+.tree1 {
+    width: 128px;
+    height: 128px;       
+    background-image: url("../assets/trees/Tree3.png");
+    background-size: 1024px 128px; /* 8 frames * 128px = 1024px */
+    position: absolute;
+    z-index: 2; 
+    animation: treeMove 1s steps(8) infinite;
+}
+
+.tree2 {
+    width: 128px;
+    height: 128px;       
+    background-image: url("../assets/trees/Tree4.png");
+    background-size: 1024px 128px; /* 8 frames * 128px = 1024px */
+    position: absolute;
+    z-index: 2; 
+    animation: treeMove 1s steps(8) infinite;
+}
+
+.tree2.up16   { transform: translateY(-16px); }
+.tree2.up32   { transform: translateY(-32px); }
+.tree2.down16 { transform: translateY(16px); }
+.tree2.down32 { transform: translateY(32px); }
+
+.house {
+    width: 160px;
+    height: 160px;
+    background-image: url("../assets/houses/House2.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+
+    position: absolute;
+    z-index: 3;
+}
+
+.tower {
+    width: 160px;
+    height: 160px;
+    background-image: url("../assets/houses/Tower.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+
+    position: absolute;
+    z-index: 3;
+}
+
+.monastery {
+    width: 260px;
+    height: 260px;
+    background-image: url("../assets/houses/Monastery.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+
+    position: absolute;
+    z-index: 3;
+}
+
+.monastery.up32 { transform: translateY(-32px); }
+
+.rock1 {
+    width: 60px;
+    height: 60px;
+    background-image: url("../assets/rocks/Rock2.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+
+    position: absolute;
+    z-index: 3;
+}
+
+.rock2 {
+    width: 60px;
+    height: 60px;
+    background-image: url("../assets/rocks/Rock1.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+
+    position: absolute;
+    z-index: 2;
+}
+
+.house-2 {
+    width: 160px;
+    height: 160px;
+    background-image: url("../assets/houses/House1.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+
+    position: absolute;
+    z-index: 3;
+}
+
+.archery {
+    width: 200px;
+    height: 200px;
+    background-image: url("../assets/houses/Archery.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+
+    position: absolute;
+    z-index: 3;
+}
+
+.house-2.up16   { transform: translateY(-16px); }
+.house-2.up32   { transform: translateY(-32px); }
+.house-2.down16 { transform: translateY(16px); }
+.house-2.down32 { transform: translateY(32px); }
+
+
+.sheep {
+    width: 128px;            
+    height: 128px;           
+
+    background-image: url("../assets/sheeps/sheep2.png");
+    background-repeat: no-repeat;
+    background-size: 768px 128px;   /* 6 frames * 128px */
+
+    image-rendering: pixelated;
+
+    animation: sheepIdle 1.2s steps(6) infinite;
+    position: absolute;
+}
+
+@keyframes sheepIdle {
+    from { background-position: 0px 0px; }
+    to   { background-position: -768px 0px; }
+}
+
+
+.bush {
+    width: 128px; 
+    height: 128px;             
+
+    background-image: url("../assets/bushes/Bushe3.png");
+    background-repeat: no-repeat;
+    background-size: 1024px 128px;  /* 8 frames * 128px */
+
+    image-rendering: pixelated;
+
+    animation: bushIdle 1s steps(8) infinite;
+    position: absolute;
+}
+
+.bush.up32 { transform: translateY(-32px); }
+
+@keyframes bushIdle {
+    from { background-position: 0px 0px; }
+    to   { background-position: -1024px 0px; }
+}
+
+.bush2 {
+    width: 128px; 
+    height: 128px;             
+
+    background-image: url("../assets/bushes/Bushe1.png");
+    background-repeat: no-repeat;
+    background-size: 1024px 128px;  /* 8 frames * 128px */
+
+    image-rendering: pixelated;
+
+    animation: bushIdle 1s steps(8) infinite;
+    position: absolute;
+}
+
+.bush2.up32 { transform: translateY(-32px); }
+.tower.up16 { transform: translateY(-16px); }
+
+.archerIdle {
+    width: 138px;                /* frame width */
+    height: 128px;               /* frame height */
+
+    background-image: url("../assets/guards/Archer_Idle.png");
+    background-repeat: no-repeat;
+    background-size: 768px 192px;   /* 6 frames * 128px */
+
+    image-rendering: pixelated;
+
+    animation: archerIdleAnim 1s steps(6) infinite;
+    position: absolute;
+}
+
+@keyframes archerIdleAnim {
+    from { background-position: 0px 0px; }
+    to   { background-position: -768px 0px; }
+}
+
+.monche {
+    width: 138px;                /* frame width */
+    height: 128px;               /* frame height */
+
+    background-image: url("../assets/guards/Idle.png");
+    background-repeat: no-repeat;
+    background-size: 768px 192px;   /* 6 frames * 128px */
+
+    image-rendering: pixelated;
+
+    animation: archerIdleAnim 1s steps(6) infinite;
+    position: absolute;
+}
+
+.warrior-black {
+    width: 138px;                /* frame width */
+    height: 128px;               /* frame height */
+
+    background-image: url("../assets/guards/Lancer_Idle.png");
+    background-repeat: no-repeat;
+    background-size: 768px 192px;   /* 6 frames * 128px */
+
+    image-rendering: pixelated;
+
+    animation: archerIdleAnim 1s steps(6) infinite;
+    position: absolute;
+}
+
+#uiScaleWrapper {
+    position: absolute;
+    width: 1920px;
+    height: 1100px; 
+    transform-origin: top left;
+}
+

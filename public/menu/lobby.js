@@ -13,74 +13,129 @@ lobbyOverlay.classList.remove("hidden");
 
 // Load username
 const username = localStorage.getItem("username");
-currentUser.textContent = username ? ("You: " + username) : "You: (unknown)";
+currentUser.textContent = username ? ("Welcome to Tiny Swords, " + username) : "You: (unknown)";
 
 let socketId = null;
+let lobbyId = null;
 
+// --- CONNECTED ---
 socket.on("connect", () => {
     socketId = socket.id;
     console.log("Connected with socket ID:", socketId);
 
-    const username = localStorage.getItem("username");
-    if (username) {
-        socket.emit("registerUsername", username);
-    }
-
-    // join lobby AFTER redirect
-    if (localStorage.getItem("joinLobbyLater") === "yes") {
-        socket.emit("joinLobby");
-        localStorage.removeItem("joinLobbyLater");
+    // Load username
+    const name = localStorage.getItem("username");
+    if (name) {
+        socket.emit("registerUsername", name);
     }
 });
 
+// Server conficmed username
+socket.on("usernameStatus", ({ success }) => {
+    if (success) {
+        socket.emit("joinLobby");
+    }
+});
+
+// Expose the socket globally for debugging
 window.sharedSocket = socket;
 
+// --- RECEIVED LOBBY ID ---
+socket.on("lobbyAssigned", async ({ lobbyId: id }) => {
+    console.log("Assigned to lobby:", id);
+    lobbyId = id;
+    window.currentLobbyId = id;
+
+    // Preload assets **AFTER joining lobby**
+    await preloadAssets();
+
+        // After preload, tell server we're ready
+    socket.emit("clientReady");
+});
+
 // --- LOBBY UPDATE ---
-socket.on("lobbyUpdate", ({ players, hostId }) => {
-    console.log("LOBBY UPDATE RECEIVED:", players, hostId);  // FIXED
+socket.on("lobbyUpdate", ({ players, hostId, readiness }) => {
 
     // Clear player list
     playerList.innerHTML = "";
 
     players.forEach(p => {
-        const li = document.createElement("li");
-        li.textContent = p.userName;
+        let label = p.userName;
+        if (p.userName === username) label += " (You)";
+        if (p.id === hostId) label += " (Host)";
+        if (!readiness[p.id]) label += " (loading...)";
 
-        if (p.userName === username) li.textContent += " (You)";
-        if (p.id === hostId) li.textContent += " (Host)";
+        const li = document.createElement("li");
+        li.textContent = label;
         playerList.appendChild(li);
     });
 
-    // Host logic
+    const minPlayers = players.length >= 2;
+    const allReady = players.every(p => readiness[p.id]);
+
     if (socketId === hostId) {
         startBtn.classList.remove("hidden");
-        startBtn.disabled = players.length < 2; // need at least 2 players
-        hostNotice.textContent = players.length < 2
-            ? "You are the host! Waiting for more players (min 2, max 4)."
-            : "You are the host! Click Start Game when ready.";
+        startBtn.disabled = !(minPlayers && allReady);
+
+        hostNotice.textContent = !minPlayers
+            ? "Waiting for at least 2 players..."
+            : !allReady
+                ? "Players are loading assets..."
+                : "All ready! Start the game.";
     } else {
         startBtn.classList.add("hidden");
-        hostNotice.textContent = players.length < 4
-            ? "Waiting for more users to join..."
-            : "Waiting for host to start the game...";
+
+        hostNotice.textContent = !minPlayers
+            ? "Waiting for players..."
+            : !allReady
+                ? "Players are loading assets..."
+                : "Waiting for host to start the game...";
     }
 });
 
-// Start game
+// --- HOST STARTS GAME ---
 startBtn.addEventListener("click", () => {
-    socket.emit("startGame");
+    socket.emit("startGame", { lobbyId });
 });
 
-// Hide overlay when game starts
-socket.on("gameStarted", (playersData) => {
-    console.log("GAME START TRIGGERED FROM SERVER");
+// --- GAME START EVENT ---
+socket.on("gameStarted", ({ lobbyId: id, players }) => {
+    if (id !== window.currentLobbyId) return;
+
+    console.log("GAME START for lobby:", id);
 
     lobbyOverlay.classList.add("hidden");
 
     // Pass players data into the main game logic
-    window.playersDataFromServer = playersData;
+    window.playersDataFromServer = players;
 
-    // Tell client.js to start spawning players
-    const event = new Event("serverGameStart");
-    window.dispatchEvent(event);
+    // Notify client.js that game should start
+    window.dispatchEvent(new Event("serverGameStart"));
 });
+
+async function preloadAssets() {
+    const assets = [
+        "/assets/warrior_black/Warrior_Attack1.png",
+        "/assets/warrior_black/Warrior_Idle.png",
+        "/assets/warrior_black/Warrior_Run.png",
+        "/assets/warrior_blue/Warrior_Attack1.png",
+        "/assets/warrior_blue/Warrior_Idle.png",
+        "/assets/warrior_blue/Warrior_Run.png",
+        "/assets/warrior_red/Warrior_Attack1.png",
+        "/assets/warrior_red/Warrior_Idle.png",
+        "/assets/warrior_red/Warrior_Run.png",
+        "/assets/warrior_yellow/Warrior_Attack1.png",
+        "/assets/warrior_yellow/Warrior_Idle.png",
+        "/assets/warrior_yellow/Warrior_Run.png",
+        "/assets/sheep/Sheep_Grass192.png",
+        "/assets/buffs/fc659.png"
+    ];
+
+    await Promise.all(
+        assets.map(src => new Promise(resolve => {
+            const img = new Image();
+            img.onload = resolve;
+            img.src = src;
+        }))
+    );
+}

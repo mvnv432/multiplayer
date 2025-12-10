@@ -1,9 +1,15 @@
-body {
-    background: #222;
-    color: #2b2a2a;
-    font-family: sans-serif;
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Cinzel', serif;
     text-align: center;
+    background: linear-gradient(#259275, #84ccfc);
+    overflow: hidden;
+    position: relative;
+    z-index: 0;
 }
+
 
 #menu {
     display: flex;
@@ -28,15 +34,42 @@ button:hover {
     background-color: #45a049;
 }
 
-#game-area {
-    position: relative;
-    width: 800px;
+#arena-tiles {
+    position: absolute;
+    left: -220px;
+    top: -100px; 
+    overflow: visible;
+    pointer-events: none;
+    z-index: 0;
+    image-rendering: pixelated;
+}
+
+#game-wrapper {
+    width: 900px;
     height: 600px;
-    background: #333;
-    margin: 2rem auto;
-    border: 2px solid #555;
+    position: absolute;
+    transform-origin: top left;
+    margin: 0 auto;
     overflow: visible;
 }
+
+#game-area-border {
+    transform-origin: top center;
+    width: 900px;
+    height: 600px;
+    box-sizing: border-box;
+}
+
+#game-area {
+    
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+
+
 
 /* #player For local, .player for others */
 #player, 
@@ -72,26 +105,123 @@ button:hover {
     100% { filter: brightness(2); }
 }
 
+/* Hearths, others maybe later */
+.pickup {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+}
+
+/* Dark overlay */
 #lobby-overlay {
     position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.7);
+    top: 0; 
+    left: 0;
+    width: 100%; 
+    height: 100%;
+    background: rgba(0,0,0,0.75);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 999;
+
+    /* Celtic faded pattern */
+    backdrop-filter: blur(3px);
 }
 
 #lobby-overlay.hidden {
     display: none;
 }
 
+/* Celtic lobby box */
 #lobby-box {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
+    background: #f4e7c4; /* Parchment color */
+    border-radius: 16px;
+    padding: 25px 30px;
+    width: 350px;
+    text-align: center;
+    color: #2b2b2b;
+    font-family: 'Cinzel', serif;
+    position: relative;
+
+    /* Celtic border */
+    border: 6px solid #3a5f2c;
+    box-shadow:
+        0 0 15px rgba(0,0,0,0.7),
+        inset 0 0 10px rgba(0,0,0,0.3);
 }
+
+/* Celtic Title */
+#lobby-box h2 {
+    font-family: 'Cinzel', serif;
+    margin-top: 0;
+    font-size: 28px;
+    font-weight: bold;
+    color: #2e4a22;
+    text-shadow: 1px 1px 0 #d8c9a5;
+}
+
+/* Subtitles */
+#lobby-box h3 {
+    color: #3a5f2c;
+    font-size: 20px;
+    border-bottom: 2px solid #3a5f2c;
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+}
+
+/* Player list */
+#playerList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#playerList li {
+    padding: 6px 0;
+    font-size: 16px;
+    color: #333;
+}
+
+/* Start button */
+#startBtn {
+    margin-top: 15px;
+    background: #3a5f2c;
+    color: #f4e7c4;
+    font-family: 'Cinzel', serif;
+    font-size: 18px;
+    padding: 10px 20px;
+    border: 3px solid #2e4a22;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+#startBtn:hover {
+    background: #4d7738;
+    border-color: #3a5f2c;
+}
+
+#startBtn:disabled {
+    background: #777;
+    border-color: #555;
+    cursor: not-allowed;
+}
+
+/* Host notice text */
+#hostNotice {
+    font-style: italic;
+    margin-bottom: 15px;
+    color: #5a4d32;
+}
+
+/* User label */
+#currentUser {
+    font-weight: bold;
+    color: #2d4d26;
+}
+
 
 .hidden {
     display: none !important;
@@ -109,7 +239,7 @@ button:disabled {
     bottom: 73px;      /* above head */
     left: 32px;
     width: 30px;
-    height: 1px;
+    height: 2px;
     background: #222;
     border: 1px solid #000;
 }
@@ -140,12 +270,20 @@ button:disabled {
 }
 
 .win-box {
-    background: #222;
-    padding: 30px 40px;
-    border-radius: 12px;
-    text-align: center;
-    color: white;
-    font-family: sans-serif;
+        background: #f4e7c4; /* Parchment color */
+        border-radius: 16px;
+        padding: 25px 30px;
+        width: 350px;
+        text-align: center;
+        color: #2b2b2b;
+        font-family: 'Cinzel', serif;
+        position: relative;
+    
+        /* Celtic border */
+        border: 6px solid #3a5f2c;
+        box-shadow:
+            0 0 15px rgba(0,0,0,0.7),
+            inset 0 0 10px rgba(0,0,0,0.3);
     animation: popIn 0.3s ease;
 }
 
@@ -167,18 +305,319 @@ button:disabled {
     border: none;
     font-size: 16px;
     cursor: pointer;
-    background: #ffd600;
+    font-family: 'Cinzel', serif;
+    background: #3a5f2c;
 }
 
-#game-timer {
+
+
+.corner-top-left {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile1.png");
+    background-position: 0 0;
+    background-size: 576px 384px;
     position: absolute;
-    top: 10px;
-    left: 10px;
-    padding: 6px 12px;
-    background: rgba(0, 0, 0, 0.4);
+    top: 50px;
+    left: 50px;
+    z-index: 1;
+}
+
+.grass-center-top {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile1.png");
+    background-position: -64px 0px; /* next tile to the right */
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+.corner-top-right {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile1.png");
+    background-position: -128px 0px; /* next tile to the right */
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+.sides-left {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile1.png");
+    background-size: 576px 384px;
+    background-position: 0px -64px; /* left edge tile */
+    position: absolute;
+    z-index: 1;
+}
+
+.sides-right {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile1.png");
+    background-size: 576px 384px;
+    background-position: -128px -64px; 
+    position: absolute;
+    z-index: 1;
+}
+
+.corner-down {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile1.png");
+    background-position: -128px -128px;
+    background-size: 576px 384px;
+    position: absolute;
+    top: 50px;
+    left: 50px;
+    z-index: 1;
+}
+
+.corner-down-left {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile1.png");
+    background-position: 0px -128px;
+    background-size: 576px 384px;
+    position: absolute;
+    top: 50px;
+    left: 50px;
+    z-index: 1;
+}
+
+.grass-center {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile1.png");
+    background-position: -64px -64px;
+    background-size: 576px 384px;
+    position: absolute;
+    z-index: 1;
+}
+
+.down-center {
+    width: 64px;
+    height: 64px;
+    background-image: url("../assets/tiles/tile1.png");
+    background-position: -64px -128px;
+    background-size: 576px 384px;
+    position: absolute;
+    top: 50px;
+    left: 50px;
+    z-index: 1;
+}
+
+.tower {
+    width: 160px;
+    height: 160px;
+    background-image: url("../assets/houses/Tower.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+
+    position: absolute;
+    z-index: 3;
+}
+
+
+.pine {
+    width: 128px;        /* tree width (adjust as needed) */
+    height: 128px;       /* tree height (adjust as needed) */
+    background-image: url("../assets/trees/Tree1.png");
+    background-size: 1024px 128px; /* 8 frames * 128px = 1024px */
+    position: absolute;
+    z-index: 3; /* above tile */
+    animation: treeMove 1s steps(8) infinite;
+}
+
+.pine.down16 { transform: translateY(32px); }
+.pine.up32 { transform: translateY(-32px); }
+
+.pine-tall {
+    width: 128px;        /* tree width (adjust as needed) */
+    height: 128px;       /* tree height (adjust as needed) */
+    background-image: url("../assets/trees/Tree2.png");
+    background-size: 1024px 128px; /* 8 frames * 128px = 1024px */
+    position: absolute;
+    z-index: 3; /* above tile */
+    animation: treeMove 1s steps(8) infinite;
+}
+
+.pine-tall.up32   { transform: translateY(-32px); }
+
+
+@keyframes treeMove {
+    from {
+        background-position: 0 0;
+    }
+    to {
+        background-position: -1024px 0;
+    }
+}
+
+.tree2 {
+    width: 128px;
+    height: 128px;       
+    background-image: url("../assets/trees/Tree4.png");
+    background-size: 1024px 128px; /* 8 frames * 128px = 1024px */
+    position: absolute;
+    z-index: 2; 
+    animation: treeMove 1s steps(8) infinite;
+}
+
+.house {
+    width: 160px;
+    height: 160px;
+    background-image: url("../assets/houses/House2.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+
+    position: absolute;
+    z-index: 3;
+}
+
+.rock2 {
+    width: 60px;
+    height: 60px;
+    background-image: url("../assets/rocks/Rock1.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+
+    position: absolute;
+    z-index: 2;
+}
+
+.sheep {
+    width: 128px;            
+    height: 128px;           
+
+    background-image: url("../assets/sheeps/sheep2.png");
+    background-repeat: no-repeat;
+    background-size: 768px 128px;   /* 6 frames * 128px */
+
+    image-rendering: pixelated;
+
+    animation: sheepIdle 1.2s steps(6) infinite;
+    position: absolute;
+}
+
+@keyframes sheepIdle {
+    from { background-position: 0px 0px; }
+    to   { background-position: -768px 0px; }
+}
+
+.house-2 {
+    width: 160px;
+    height: 160px;
+    background-image: url("../assets/houses/House1.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+
+    position: absolute;
+    z-index: 3;
+}
+
+.player {
+    position: absolute;
+}
+
+.sprite {
+    position: absolute;
+}
+
+.player-name {
+    position: absolute;
+    top: 0px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    font-weight: bold;
     color: white;
-    font-size: 22px;
-    border-radius: 6px;
-    font-family: sans-serif;
-    z-index: 2000;
+    text-shadow: 1px 1px 3px black;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+/* Counter-flip class */
+.name-no-flip {
+    transform: translateX(-50%) scaleX(-1);
+}
+
+#pause-overlay, #resume-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.pause-box, .resume-box {
+    background: #f4e7c4; /* Parchment color */
+    border-radius: 16px;
+    padding: 25px 30px;
+    width: 350px;
+    text-align: center;
+    color: #2b2b2b;
+    font-family: 'Cinzel', serif;
+    position: relative;
+
+    /* Celtic border */
+    border: 6px solid #3a5f2c;
+    box-shadow:
+        0 0 15px rgba(0,0,0,0.7),
+        inset 0 0 10px rgba(0,0,0,0.3);
+}
+
+
+.pause-hidden, .resume-hidden {
+    display: none !important;
+}
+
+#death-screen {
+    position: fixed;
+    top: 20px;                 
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    pointer-events: none;  
+}
+
+.death-banner {
+    background: #f4e7c4;
+    border-radius: 14px;
+    padding: 14px 22px;
+    min-width: 320px;
+    text-align: center;
+    color: #2b2b2b;
+    font-family: 'Cinzel', serif;
+
+    border: 4px solid #3a5f2c;
+    box-shadow:
+        0 0 12px rgba(0,0,0,0.6),
+        inset 0 0 8px rgba(0,0,0,0.25);
+
+    opacity: 0;
+    transform: translateY(-20px); 
+    transition: opacity 0.5s ease, transform 0.5s ease;
+
+    pointer-events: auto;
+}
+
+#death-screen.show .death-banner {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.death-banner h2 {
+    margin: 0 0 6px 0;
+    font-size: 18px;
+    color: #7b1e1e;
+}
+
+.death-banner p {
+    margin: 0 0 10px 0;
+    font-size: 14px;
 }

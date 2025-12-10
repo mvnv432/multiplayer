@@ -2,46 +2,19 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 
-import path from "path";
-import { fileURLToPath } from "url";
-
 const app = express();
 const server = createServer(app);
 const io = new Server(server);
 
-// Needed because ES modules don't have __dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Serve static files
-app.use(express.static(path.join(__dirname, "../public")));
+app.use(express.static('public'));
 
 const players = {};
 const users = {};
-const waitingLobby = [];
 const COLORS = ['red', 'blue', 'black', 'yellow'];
-let roundStartTime = null;
-let timerInterval = null;
-
-// Helper: broadcast full lobby state
-function updateLobby() {
-  const hostId = waitingLobby[0];
-
-   // Broadcast full lobby to everyone inside it
-    waitingLobby.forEach(id => {
-        io.to(id).emit("lobbyUpdate", {
-            players: waitingLobby.map(pid => ({
-                id: pid,
-                userName: users[pid]?.userName || "(unknown)",
-                ready: users[pid]?.ready || false
-            })),
-            hostId
-        });
-    });
-}
+let lobbies = [];
+let lobbyCounter = 1;
 
 io.on('connection', (socket) => {
-
   console.log('Connected:', socket.id);
   
   // --- CREATE USER (username only) ---
@@ -61,86 +34,196 @@ io.on('connection', (socket) => {
     console.log(`User created: ${userName}`);
   });
 
-
-
-
-  // --- JOIN LOBBY ---
-  socket.on("joinLobby", () => {
-    // Prevent duplicates
-    if (!waitingLobby.includes(socket.id)) {
-        waitingLobby.push(socket.id);
-    }
-
-    // Every user MUST HAVE a ready property
-    if (!users[socket.id]) {
-        users[socket.id] = { userName: "(unknown)", ready: false };
-    }
-
-    updateLobby();
-  });
-
+    // --- REGISTER USERNAME (lobby.js reconnection) ---
   socket.on("registerUsername", (username) => {
     if (!username) return;
 
-    users[socket.id] = { 
-        userName: username, 
-        ready: false 
-    };
+    users[socket.id] = { userName: username, ready: false };
+    socket.emit("usernameStatus", { success: true, userName: username });
+  });
 
-    console.log("Username registered for socket:", socket.id, "=>", username);
+  // Join lobby
+  socket.on("joinLobby", () => {
+    const user = users[socket.id];
+    if (!user) return console.log("ERROR: joinLobby with no user:", socket.id);
+
+    //Find a lobby with space (< 4 players) AND not started
+    let lobby = lobbies.find(l => !l.started && l.players.length < 4);
+
+    // If none exist, make a new one
+    if (!lobby) {
+        lobby = {
+            id: "lobby_" + lobbyCounter++,
+            players: [],
+            hostId: null,
+            started: false,
+            readiness: {},
+            pausedAt: null,
+            accumulatedTime: 0
+        };
+        lobbies.push(lobby);
+    }
+
+    // Add the player
+    lobby.players.push({ id: socket.id, userName: users[socket.id].userName });
+    lobby.readiness[socket.id] = false;
+
+    if (!lobby.hostId) {
+        lobby.hostId = socket.id;
+    }
+
+    // Join the Socket.IO room for this lobby
+    socket.join(lobby.id);
+    users[socket.id].lobbyId = lobby.id;
+
+
+    // Save lobby on user
+    users[socket.id].lobbyId = lobby.id
+
+    // Tell the client which lobby they're in
+    socket.emit("lobbyAssigned", { lobbyId: lobby.id });
+
+    // Send update only to this lobby
+    io.to(lobby.id).emit("lobbyUpdate", {
+      players: lobby.players,
+      hostId: lobby.hostId,
+      readiness: lobby.readiness
+    });
 });
 
+  // Client ready check after preload
+  socket.on("clientReady", () => {
+    let lobby = lobbies.find(l => l.players.some(p => p.id === socket.id));
+    if (!lobby) return;
+
+    lobby.readiness[socket.id] = true;
+    console.log("clientReady from", socket.id);
+    io.to(lobby.id).emit("lobbyUpdate", {
+        players: lobby.players,
+        hostId: lobby.hostId,
+        readiness: lobby.readiness
+    });
+  });
+  
   // Start Game (host only)
   socket.on("startGame", () => {
-    const hostId = waitingLobby[0];
-    if (socket.id !== hostId) return;
 
-    // Create players for everyone in lobby
-    waitingLobby.forEach((id, index) => {
-      players[id] = {
-        x: 100,
-        y: 100,
-        color: COLORS[index % COLORS.length],
-        hp: 4
-      };
+    //Find the lobby this host belongs to
+    const lobby = lobbies.find(l => l.hostId === socket.id);
+    if (!lobby) return;
+
+    // Ensure all players in this lobby are ready
+    const allReady = lobby.players.every(p => lobby.readiness[p.id]);
+
+    if (!allReady) {
+        socket.emit("notAllReady");
+        return;
+    }
+
+    lobby.started = true; // Prevent new players from joining
+
+    const lobbyId = lobby.id;
+    lobby.accumulatedTime = 0;
+    lobby.roundStartTime = Date.now();
+
+    const SPAWN_POINTS = [
+    { x: 80, y: 80 },                                 // top-left
+    { x: 900 - 120, y: 600 - 150 },                    // bottom-right
+    { x: 80, y: 600 - 150 },                          // bottom-left
+    { x: 900 - 120, y: 80 }                            // top-right
+    ]; 
+
+    // Create players only for this lobby
+    lobby.players.forEach((p, index) => {
+      const spawn = SPAWN_POINTS[index % SPAWN_POINTS.length];
+
+        players[p.id] = {
+            x: spawn.x,
+            y: spawn.y,
+            color: COLORS[index % COLORS.length],
+            hp: 4,
+            lobbyId,  // store players lobby
+            userName: users[p.id]?.userName || "Player"
+        };
     });
 
-    // Tell clients game is starting
-    io.emit("gameStarted", players);
+    // Emit only to this lobby
+    io.to(lobby.id).emit("gameStarted", {
+      lobbyId,
+      players: playersForLobby(lobbyId)
+    });
 
-    // Also start round timer
-    roundStartTime = Date.now();
-    timerInterval = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - roundStartTime) / 1000);
-        io.emit("updateTimer", elapsed);
+    //Start timer only for this lobby
+    lobby.roundStartTime = Date.now();
+    lobby.timerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - lobby.roundStartTime) / 1000);
+        io.to(lobby.id).emit("updateTimer", { lobbyId, elapsed });
     }, 1000);
 
-    console.log("Game Started with players:", players);
+    console.log("Game Started in lobby:", lobby.id);
+
+    // Heart spawn interval when lobby starts
+    if (!lobby.heartInterval) {
+      lobby.heartInterval = setInterval(() => {
+        spawnHeart(lobby);
+      }, 15000);
+    }
   });
+
 
   // Movement
     socket.on('move', (pos) => {
 
-      if (!players[socket.id]) return; // ignore movement before game starts
+    const p = players[socket.id];
+    if (!p) return;
 
-      // Clamp values
-      const AREA_WIDTH = 800;
-      const AREA_HEIGHT = 600;
-      const PLAYER_SIZE = 40;
-
-      const x = Math.max(0, Math.min(pos.x, AREA_WIDTH - PLAYER_SIZE));
-      const y = Math.max(0, Math.min(pos.y, AREA_HEIGHT - PLAYER_SIZE));
+    p.x = pos.x;
+    p.y = pos.y;
 
       // Update position only. Dont send color to keep it
-      players[socket.id].x = x;
-      players[socket.id].y = y;
+      players[socket.id].x = p.x;
+      players[socket.id].y = p.y;
       
-      io.emit('playerMoved', { id: socket.id, pos: { x, y} });
+      io.to(p.lobbyId).emit('playerMoved', { 
+        lobbyId: p.lobbyId, 
+        id: socket.id, 
+        pos: { x: p.x, y: p.y} });
+    });
+
+    // Server validates + sends pickUp
+    socket.on("pickupHeart", () => {
+      const lobby = findLobbyForPlayer(socket);
+
+      if (!lobby.currentHeart) return;
+
+      // give updated HP to clients
+      const p = players[socket.id];
+      p.hp = Math.min(p.hp + 1, 4);
+
+      // notify HP change
+      io.to(lobby.id).emit("playerHP", { 
+          lobbyId: lobby.id,
+          id: socket.id,
+          hp: p.hp
+      });
+
+      // tell clients that heart disappeared
+      io.to(lobby.id).emit("heartCollected", {
+          by: socket.id
+      });
+
+      lobby.currentHeart = null;
     });
 
     // Send attack to all other clients
     socket.on("attack", () => {
-    socket.broadcast.emit("playerAttacked", socket.id);
+      const p = players[socket.id];
+      if (!p) return;
+
+      io.to(p.lobbyId).emit("playerAttacked", {
+          lobbyId: p.lobbyId,
+          id: socket.id
+      });
     });
 
     // When someone gets hit
@@ -149,6 +232,9 @@ io.on('connection', (socket) => {
       const victim = players[victimId];
 
       if (!attacker || !victim) return;
+      if (attacker.lobbyId !== victim.lobbyId) return; 
+
+      const lobbyId = attacker.lobbyId;
 
         // Compute distance between players
         const dx = attacker.x - victim.x;
@@ -163,18 +249,94 @@ io.on('connection', (socket) => {
             victim.hp -= 1;
 
             // Send updated HP to everyone
-            io.emit("playerHP", { id: victimId, hp: victim.hp });
+            io.to(lobbyId).emit("playerHP", { lobbyId, id: victimId, hp: victim.hp });
+
+            io.to(lobbyId).emit("playerHit", {
+              lobbyId,
+              attackerId: socket.id,
+              victimId
+          });
 
             // If hp <= 0 player dies
             if (victim.hp <= 0) {
-              io.emit("playerDied", victimId);
-              delete players[victimId];
+              io.to(lobbyId).emit("playerDied", { lobbyId, id: victimId } );
+              // delete players[victimId];
             }
 
-            checkWinner(roundStartTime, timerInterval)
+            checkWinner(lobbyId)
 
         }
     });
+
+  socket.on("pauseGame", () => {
+    const p = players[socket.id];
+    if (!p) return;
+
+    const lobby = lobbies.find(l => l.id === p.lobbyId);
+    if (!lobby) return;
+
+      // Save how much time has passed until now
+      lobby.accumulatedTime += Math.floor((Date.now() - lobby.roundStartTime) / 1000);
+
+      // Stop the timer interval
+      clearInterval(lobby.timerInterval);
+      lobby.timerInterval = null;
+
+      // Broadcast pause to everyone in lobby
+      io.to(lobby.id).emit("gamePaused", {
+        lobbyId: lobby.id,
+        by: users[socket.id].userName
+      });
+  });
+
+  socket.on("resumeGame", () => {
+    const p = players[socket.id];
+    if (!p) return;
+
+    const lobby = lobbies.find(l => l.id === p.lobbyId);
+    if (!lobby) return;
+
+    // new "start time" from now
+    lobby.roundStartTime = Date.now();
+
+    // Restart timer
+    lobby.timerInterval = setInterval(() => {
+        const nowElapsed = Math.floor((Date.now() - lobby.roundStartTime) / 1000);
+        const totalElapsed = lobby.accumulatedTime + nowElapsed;
+
+        io.to(lobby.id).emit("updateTimer", {
+            lobbyId: lobby.id,
+            elapsed: totalElapsed
+        });
+    }, 1000);
+
+    io.to(lobby.id).emit("gameResumed", {
+        lobbyId: lobby.id,
+        by: users[socket.id].userName
+    });
+  })
+
+    socket.on("quitGame", () => {
+      const user = users[socket.id];
+      if (!user) return;
+
+      const lobbyId = user.lobbyId;
+      if (!lobbyId) return;
+
+      const by = user.userName;
+
+      // Popup for others
+      socket.to(lobbyId).emit("gameQuit", { lobbyId, by });
+
+      // Turn quitter into sheep for others
+      socket.to(lobbyId).emit("playerDied", {
+          lobbyId,
+          id: socket.id
+      });
+  });
+
+
+
 
   // Disconnect
   socket.on("disconnect", () => {
@@ -182,15 +344,65 @@ io.on('connection', (socket) => {
 
     delete users[socket.id];
 
-    const index = waitingLobby.indexOf(socket.id);
-    if (index !== -1) waitingLobby.splice(index, 1);
+    let lobby = lobbies.find(l => 
+      l.players.some(p => p.id === socket.id)
+    );
 
-    // Cleans lobby
-    updateLobby();
+    if (!lobby) {
+      console.log("Player was not in a lobby.");
+      return;
+    }
+
+    lobby.players = lobby.players.filter(p => p.id !== socket.id);
+
+    // If only ONE player remains, end the game and kick them
+    if (lobby.players.length === 1) {
+      const lastPlayerId = lobby.players[0].id;
+
+      console.log("Only one player remains, kicking to lobby:", lastPlayerId);
+
+    io.to(lobby.id).emit("gameOver", {
+        lobbyId: lobby.id,
+        winnerName: players[lastPlayerId].userName,
+        roundTime: Math.floor((Date.now() - lobby.roundStartTime) / 1000)
+    });
+
+      lobby.started = false;
+    }
+
+
+    if (lobby.hostId === socket.id) {
+      lobby.hostId = lobby.players.length > 0 
+          ? lobby.players[0].id 
+          : null;
+    }
+    
+    if (lobby.players.length === 0) {
+      console.log("Lobby empty → removing:", lobby.id);
+      lobbies = lobbies.filter(l => l.id !== lobby.id);
+    } else {
+        // Otherwise update remaining players in the lobby
+        io.to(lobby.id).emit("lobbyUpdate", {
+            players: lobby.players,
+            hostId: lobby.hostId,
+            readiness: lobby.readiness
+        });
+    }
 
     // Cleans game
     delete players[socket.id];
-    io.emit('playerLeft', socket.id);
+
+    // Clean lobby readiness
+    if (lobby.readiness[socket.id] !== undefined) {
+      delete lobby.readiness[socket.id];
+    }
+
+    if (users[socket.id]?.lobbyId) {
+      io.to(users[socket.id].lobbyId).emit("playerLeft", {
+          lobbyId: users[socket.id].lobbyId,
+          id: socket.id
+      });
+    }
   });
 
 });
@@ -200,21 +412,48 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, "0.0.0.0", () => console.log(`Server running on ${PORT}`));
 
 
-function checkWinner(roundStartTime, timerInterval) {
-  const alive = Object.entries(players).filter(([id, p]) => p.hp > 0);
+// Helpers
+
+function checkWinner(lobbyId) {
+  const alive = Object.entries(players)
+    .filter(([_, p]) => p.lobbyId === lobbyId && p.hp > 0);
 
   if (alive.length <= 1) {
     const winnerId = alive[0]?.[0] || null;
     const winner = winnerId ? players[winnerId] : null;
 
-    const roundTime = Math.floor((Date.now() - roundStartTime) / 1000 );
+    const lobby = lobbies.find(l => l.id === lobbyId);
+    for (const pid in lobby.readiness) {
+      lobby.readiness[pid] = false;
+    }
+    clearInterval(lobby.timerInterval);
 
-    clearInterval(timerInterval);
-
-    io.emit("gameOver", {
+    io.to(lobbyId).emit("gameOver", {
+      lobbyId,
       winnerId,
       winnerName: winner ? users[winnerId].userName : "Nobody",
-      roundTime
+      roundTime: Math.floor((Date.now() - lobby.roundStartTime) / 1000)
     });
   }
+}
+
+function playersForLobby(lobbyId) {
+    return Object.fromEntries(
+        Object.entries(players).filter(([_, p]) => p.lobbyId === lobbyId)
+    );
+}
+
+function findLobbyForPlayer(socket) {
+    return lobbies.find(lobby =>
+        lobby.players.some(player => player.id === socket.id)
+    );
+}
+
+function spawnHeart(lobby) {
+    const x = Math.floor(Math.random() * 800); 
+    const y = Math.floor(Math.random() * 500);
+
+    lobby.currentHeart = { x, y };
+
+    io.to(lobby.id).emit("spawnHeart", { x, y });
 }

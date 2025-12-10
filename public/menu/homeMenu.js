@@ -22,9 +22,7 @@ socket.on("usernameStatus", (data) => {
     if (data.success) {
         // Save username and color
         localStorage.setItem("username", data.userName);
-        //localStorage.setItem("color", data.color);
 
-        localStorage.setItem("joinLobbyLater", "yes");
         // Redirect to lobby
         window.location.href = "./game.html";
     } else {

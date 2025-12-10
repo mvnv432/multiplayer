@@ -4,34 +4,64 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Game</title>
-    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/ui.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <h2>Tiny Swords</h2>
-    <div id="game-timer">0:00</div>
-    <div id="game-area">
-        <div id="player"></div>
+    <audio id="bgMusic" src="assets/music/ES_Birds, Wind, Trees - Epidemic Sound.mp3" preload="auto" loop></audio>
+    <audio id="swordSound" src="assets/music/ES_Swords Scrape Together - Epidemic Sound.mp3" preload="auto"></audio>
+    <audio id="swordSwing" src="assets/music/ES_Sword Swing, Airy 02 - Epidemic Sound.mp3" preload="auto"></audio>
+    <audio id="swordHit" src="assets/music/ES_Drop, Impact, Hit, Short, Bloody, Wet 04 - Epidemic Sound.mp3" preload="auto"></audio>
+    <audio id="runningSound" src="assets/music/Running On Grass.mp3" preload="auto" loop></audio>
+    <audio id="sheepSound" src="assets/music/ES_Sheep, Baa 01 - Epidemic Sound.mp3" preload="auto"></audio>
+    <audio id="lifeGained" src="assets/music/ES_Retro, One Up, Extra Life 03 - Epidemic Sound.mp3" preload="auto"></audio>
+
+    <div id="ui-layer">
+        
+        <div id="game-timer">0:00</div>
+        <button id="pauseBtn" class="ui-btn">Pause</button>
+        <button id="resumeBtn" class="ui-btn hidden">Resume</button>
+        <button id="quitBtn" class="ui-btn">Quit</button>
+    </div>
+
+    <div id="pause-overlay" class="pause-hidden">
+        <div class="pause-box">
+            <h2 id="pause-text">Game Paused</h2>
+            <p>Press Resume to continue</p>
+        </div>
+    </div>
+
+    <div id="resume-overlay" class="resume-hidden">
+        <div class="resume-box">
+            <h2 id="resume-text">Game has been resumed</h2>
+        </div>
     </div>
     
-
-    <button id="quitBtn">Quit</button>
-
-        <div id="lobby-overlay" class="hidden">
-            <div id="lobby-box">
-                <h2>Lobby</h2>
-                <p id="currentUser"></p>
-                <!-- Host notice -->
-                <p id="hostNotice"></p>
-        
-                <!-- Player list -->
-                <h3>Players in Lobby:</h3>
-                <ul id="playerList"></ul>
-        
-                <!-- Start game button (host only) -->
-                <button id="startBtn" class="hidden">Start Game</button>
-
+    <div id="game-wrapper">
+        <div id="arena-tiles"></div> 
+        <div id="game-area-border">
+            <div id="game-area">
+                <div id="player"></div>
             </div>
         </div>
+    </div>
+
+    <div id="lobby-overlay" class="hidden">
+        <div id="lobby-box">
+            <h2>Lobby</h2>
+            <p id="currentUser"></p>
+            <!-- Host notice -->
+            <p id="hostNotice"></p>
+    
+            <!-- Player list -->
+            <h3>Players in Lobby:</h3>
+            <ul id="playerList"></ul>
+    
+            <!-- Start game button (host only) -->
+            <button id="startBtn" class="hidden">Start Game</button>
+        </div>
+    </div>
 
         <div id="win-screen" class="hidden">
             <div class="win-box">
@@ -41,9 +71,57 @@
             </div>
         </div>
 
-    </div>
+        <div id="death-screen">
+            <div class="death-banner">
+                <h2>You Died 💀</h2>
+                <p id="death-info"></p>
+            </div>
+        </div>
+        
+        <script>
+            const startGame = document.getElementById("startBtn")
+            const pauseBtn = document.getElementById("pauseBtn")
+            const resumeBtn = document.getElementById("resumeBtn")
+            const quitBtn = document.getElementById("quitBtn")
+            const swordSound = document.getElementById("swordSound")
+
+            startGame.addEventListener("click", () => { 
+                swordSound.currentTime = 0;
+                swordSound.play()
+            })
+
+            pauseBtn.addEventListener("click", () => { 
+                swordSound.currentTime = 0;
+                swordSound.play()
+            })
+
+            resumeBtn.addEventListener("click", () => { 
+                swordSound.currentTime = 0;
+                swordSound.play()
+            })
+
+            quitBtn.addEventListener("click", () => { 
+                swordSound.currentTime = 0;
+                swordSound.play()
+            })
+
+        </script>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const bgMusic = document.getElementById("bgMusic");
+
+                document.addEventListener("click", () => {
+                    bgMusic.muted = false;
+                    bgMusic.volume = 0.5;
+                    bgMusic.play().catch(err => console.error("Music play error:", err));
+                }, { once: true });
+            });
+        </script>
     <script src="/socket.io/socket.io.js"></script>
-    <script type="module" src="/menu/lobby.js"></script>
+    <script type="module" src="./menu/lobby.js"></script>
+    <script src="map/arena.js"></script>
+    <script>renderArena();</script>
     <script type="module" src="client.js"></script>
     
 </body>

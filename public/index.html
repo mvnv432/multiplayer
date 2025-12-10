@@ -3,33 +3,100 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DOM Battle</title>
-    <link rel="stylesheet" href="/css/homeMenu.css" />
+    <title>Tiny Swords</title>
+    <link rel="stylesheet" href="./css/homeMenu.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <div id="menu">
-        <h1>Tiny Swords</h1>
-        <button id="joinBtn">Create User to Join Game</button>
-    </div>
-    <div id="username-popup" class="hidden">
-        <div id="popup-box">
-            <h2>Create Username</h2>
-            <input id="usernameInput" type="text" placeholder="Enter username">
-            <button id="createBtn">Join Game</button>
-            <p id="error"></p>
+    <audio id="bgMusic" src="assets/music/background-music.mp3" loop></audio>
+    <audio id="buttonSound" src="assets/music/ES_Swords Scrape Together - Epidemic Sound.mp3" preload="auto"></audio>
+
+    <div id="uiScaleWrapper">
+
+        <div class="tinySwordsLogo">
+            <img src="assets/logo/tinySwordslogo.png" alt="Tiny Swords Logo">
         </div>
+
+        <div id="menu">
+            <button id="joinBtn" class="joinBtn" type="button">
+                Create User to Join Game
+            </button>
+
+            <div id="username-section" class="hidden">
+                <h2>Create Username</h2>
+                <input id="usernameInput" type="text" placeholder="Enter username">
+                <button id="createBtn" class="createBtn" type="button">
+                    Join Game
+                </button>
+                <p id="error"></p>
+            </div>
+        </div>
+
+        <div id="tiles"></div>
+
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const bgMusic = document.getElementById("bgMusic");
+
+            document.addEventListener("click", () => {
+                bgMusic.muted = false;
+                bgMusic.volume = 0.5;
+                bgMusic.play().catch(err => console.error("Music play error:", err));
+            }, { once: true });
+        });
+    </script>
+
+    <script>
+        const joinBtn = document.getElementById("joinBtn");
+        const createBtn = document.getElementById("createBtn");
+        const usernameSection = document.getElementById("username-section");
+        const sound = document.getElementById("buttonSound");
+
+        joinBtn.addEventListener("click", () => {
+            sound.currentTime = 0;
+            sound.play();
+
+            joinBtn.classList.add("hidden");
+            usernameSection.classList.remove("hidden");
+        });
+
+        createBtn.addEventListener("click", () => {
+            sound.currentTime = 0;
+            sound.play();
+        });
+    </script>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="menu/homeMenu.js"></script>
+    <script src="map/map.js"></script>
+    <script>renderMap();</script>
 
     <script>
-        const popup = document.getElementById("username-popup");
-
-        document.getElementById('joinBtn').addEventListener('click', () => {
-            popup.classList.remove("hidden"); // show popup
-        });
+        function scaleUI() {
+            const baseWidth = 1920; 
+            const baseHeight = 1100;
+        
+            const wrapper = document.getElementById("uiScaleWrapper");
+        
+            const scaleX = window.innerWidth / baseWidth;
+            const scaleY = window.innerHeight / baseHeight;
+        
+            const scale = Math.min(scaleX, scaleY);
+        
+            const scaledWidth = baseWidth * scale;
+            const scaledHeight = baseHeight * scale;
+        
+            wrapper.style.transform = `scale(${scale})`;
+        
+            wrapper.style.left = `${(window.innerWidth - scaledWidth) / 2}px`;
+            wrapper.style.top  = `${(window.innerHeight - scaledHeight) / 2}px`;
+        }
+        
+        window.addEventListener("resize", scaleUI);
+        scaleUI();
     </script>
 
 </body>
