@@ -35,6 +35,10 @@ button:hover {
 }
 
 #arena-tiles {
+    display: none !important;
+}
+
+/* #arena-tiles {
     position: absolute;
     left: -220px;
     top: -100px; 
@@ -42,7 +46,7 @@ button:hover {
     pointer-events: none;
     z-index: 0;
     image-rendering: pixelated;
-}
+} */
 
 #game-wrapper {
     width: 900px;

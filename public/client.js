@@ -23,6 +23,9 @@ import {
 const socket = window.sharedSocket;
 window.currentLobbyId = localStorage.getItem("currentLobbyId");
 
+// TEST that is the arena-tiles the performance issue
+document.getElementById("arena-tiles").style.display = "none";
+
 let gameIsOver = false;
 const MOVE_RATE = 20; // per second
 let lastMoveSend = 0;
