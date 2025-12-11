@@ -34,11 +34,11 @@ button:hover {
     background-color: #45a049;
 }
 
-#arena-tiles {
-    display: none !important;
-}
-
+/* test if the arena tiles are heavy */
 /* #arena-tiles {
+    display: none !important;
+} */
+#arena-tiles {
     position: absolute;
     left: -220px;
     top: -100px; 
@@ -46,7 +46,7 @@ button:hover {
     pointer-events: none;
     z-index: 0;
     image-rendering: pixelated;
-} */
+}
 
 #game-wrapper {
     width: 900px;

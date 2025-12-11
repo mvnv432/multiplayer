@@ -44,6 +44,9 @@ export class SpriteAnimation {
         const sheetHeight = this.scaledFrameHeight;
 
         this.el.style.backgroundSize = `${sheetWidth}px ${sheetHeight}px`;
+    
+        this.el.style.backgroundPosition = `0px 0px`;
+        this.el.offsetHeight;
     }
 
     // Called each frame from client.js
