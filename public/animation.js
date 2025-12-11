@@ -1,15 +1,24 @@
 export class SpriteAnimation {
     constructor(element, config) {
-        this.el = element;
+        this.container = element;
 
-        this.animations = config.animations; 
-        this.frameWidth = config.frameWidth;     // 192
-        this.frameHeight = config.frameHeight;   // 192
+        // Create IMG
+        this.img = document.createElement("img");
+        this.img.className = "sprite-img";
+        this.img.draggable = false;
+        this.container.appendChild(this.img);
 
-        // Scale factor: 192 → 96
+        this.animations = config.animations;
+        this.frameWidth = config.frameWidth;
+        this.frameHeight = config.frameHeight;
+
         this.scale = config.scale ?? 0.5;
         this.scaledFrameWidth = this.frameWidth * this.scale;
         this.scaledFrameHeight = this.frameHeight * this.scale;
+
+        // Resize container to scaled size
+        this.container.style.width = this.scaledFrameWidth + "px";
+        this.container.style.height = this.scaledFrameHeight + "px";
 
         this.current = "idle";
         this.frame = 0;
@@ -25,112 +34,97 @@ export class SpriteAnimation {
         this._play("idle");
     }
 
-    // Internal: load animation + reset
     _play(name) {
-        const animInfo = this.animations[name];
-        if (!animInfo) return;
+        const anim = this.animations[name];
+        if (!anim) return;
 
         this.current = name;
         this.frame = 0;
         this.frameTimer = 0;
-        this.totalFrames = animInfo.frames;
-        this.fps = animInfo.fps ?? 8;
+        this.totalFrames = anim.frames;
+        this.fps = anim.fps ?? 8;
 
-        // set sprite sheet file
-        this.el.style.backgroundImage = `url("${animInfo.file}")`;
+        // Set <img> source (already preloaded → no flicker)
+        this.img.src = anim.file;
 
-        // scale sheet width / height
-        const sheetWidth = this.totalFrames * this.scaledFrameWidth;
-        const sheetHeight = this.scaledFrameHeight;
 
-        this.el.style.backgroundSize = `${sheetWidth}px ${sheetHeight}px`;
-    
-        this.el.style.backgroundPosition = `0px 0px`;
-        this.el.offsetHeight;
+
+        // Scale the image to fit the display viewport
+        this.img.style.transform = `scale(${this.scale})`;
+        this.img.style.transformOrigin = "top left";
+
+            // Prevent clipping glitches
+            this.img.style.objectFit = "none";
+
+            // First frame correctly positioned
+            this.img.style.objectPosition = `0px 0px`;
     }
 
-    // Called each frame from client.js
     handleInput(input) {
         const { dx, dy, moving, attack } = input;
 
-        // If in attack animation, ignore input entirely
+        // Attack logic preserved
         if (this.current === "attack") {
             this.prevAttackDown = attack;
             return;
         }
 
-        // Ignore input for exactly one frame after attack
         if (this.justFinishedAttack) {
             this.justFinishedAttack = false;
             this.prevAttackDown = attack;
             return;
         }
 
-        // Attack edge detection (press only once)
         const attackPressed = attack && !this.prevAttackDown;
         this.prevAttackDown = attack;
 
-        // Facing logic
+        // Facing direction
         if (dx < 0) this.lastFaceLeft = true;
         else if (dx > 0) this.lastFaceLeft = false;
 
-        // Attack triggers attack animation
         if (attackPressed) {
-            console.log("%cATTACK TRIGGERED", "color:red;font-weight:bold;");
             this.isAttacking = true;
             this._play("attack");
             return;
         }
 
-        // Movement run
         if (moving) {
             if (this.current !== "run") this._play("run");
-        }
-        // Standing still → idle
-        else {
+        } else {
             if (this.current !== "idle") this._play("idle");
         }
     }
 
-    // Animation step
-    update(delta) {
-        const anim = this.animations[this.current];
-        if (!anim) return;
+update(delta) {
+    const anim = this.animations[this.current];
+    if (!anim) return;
 
-        this.frameTimer += delta;
+    this.frameTimer += delta;
 
-        if (this.frameTimer >= 1 / this.fps) {
-            this.frameTimer -= 1 / this.fps;
-            
-            
-            this.frame++;
+    if (this.frameTimer >= 1 / this.fps) {
+        this.frameTimer -= 1 / this.fps;
+        this.frame++;
 
-            if (this.current === "attack") {
-                // Attack ends when reaching last *visible* frame
-                if (this.frame >= this.totalFrames) {
-                    console.log("%cATTACK FINISHED", "color:blue;font-weight:bold;");
-
-                    this.isAttacking = false;
-                    this.justFinishedAttack = true;
-
-                    this._play("idle"); 
-                    // DO NOT PLAY IDLE HERE — client will do it next frame naturally
-                    return;
-                }
-            } else {
-                // Loop idle/run
-                this.frame = this.frame % this.totalFrames;
+        if (this.current === "attack") {
+            if (this.frame >= this.totalFrames) {
+                this.isAttacking = false;
+                this.justFinishedAttack = true;
+                this._play("idle");
+                return;
             }
+        } else {
+            this.frame = this.frame % this.totalFrames;
         }
-
-        // Use CORRECT scaled frame width here
-        const posX = -this.frame * this.scaledFrameWidth;
-        this.el.style.backgroundPosition = `${posX}px 0px`;
     }
 
-    // Movement + flipping transform
+    // FIXED — use scaled frame width
+    const posX = -(this.frame * this.frameWidth);  // 192
+    this.img.style.objectPosition = `${posX}px 0px`;
+}
+
+
     getTransform(x, y) {
-        const scaleDir = this.lastFaceLeft ? "scaleX(-1)" : "scaleX(1)";
-        return `translate(${x}px, ${y}px) ${scaleDir}`;
+        const flip = this.lastFaceLeft ? "scaleX(-1)" : "scaleX(1)";
+        return `translate(${x}px, ${y}px) ${flip}`;
     }
 }

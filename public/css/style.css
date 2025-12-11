@@ -72,15 +72,22 @@ button:hover {
     overflow: visible;
 }
 
-
+.sprite-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    image-rendering: pixelated;
+    will-change: transform, object-position;
+    transform-origin: center center;
+    object-fit: none;
+}
 
 
 /* #player For local, .player for others */
 #player, 
 .player {
     position: absolute;
-    width: 96px;
-    height: 96px;
+    overflow: hidden;
     border-radius: 8px;
 
     /* Pixelperfect rendering */
@@ -88,13 +95,12 @@ button:hover {
     image-rendering: crisp-edges;
 
     /* GPU rendering */
-    will-change: transform, background-position;
+    will-change: transform, background-position, sc;
     transform-origin: center center;
     transform: translateZ(0);
 
     /* No easing */
     transition: none;
-
     z-index: 10;
 }
 
