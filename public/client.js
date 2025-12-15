@@ -37,6 +37,8 @@ const runningSound = document.getElementById("runningSound");
 runningSound.volume = 0.5;
 runningSound.isPlaying = false;
 
+const LATE_FRAME_THRESHOLD = 0.018;
+
 // Development mode flag
 const isDev = location.hostname === "localhost" || location.hostname === "127.0.0.1";
 
@@ -279,6 +281,8 @@ function update(time) {
     const delta = (time - lastUpdateTime) / 1000;
     lastUpdateTime = time;
 
+    const isLateFrame = delta > LATE_FRAME_THRESHOLD;
+
     if (localDead) {
         anim.update(delta);  // still animate sheep
         player.style.transform = `translate(${x}px, ${y}px)`;  
@@ -426,9 +430,15 @@ function update(time) {
         }
 
         // Smooth interpolation from buffered snapshots
-        const renderTimestamp = performance.now() - 100;  // 60ms delay window
-        const { x: ix, y: iy } = getInterpolatedPosition(p, renderTimestamp);
+        let ix = p.x;
+        let iy = p.y;
 
+        if (!isLateFrame) {
+            const renderTimestamp = performance.now() - 100;
+            const pos = getInterpolatedPosition(p, renderTimestamp);
+            ix = pos.x;
+            iy = pos.y;
+        }
         // Initialise previous drawn position if missing
         if (p.prevX === undefined) {
             p.prevX = ix;
@@ -441,7 +451,7 @@ function update(time) {
             Math.abs(iy - p.prevY) > 0.5
         );
 
-        if (moving && !p.runningSound) {
+        if (!isLateFrame && moving && !p.runningSound) {
             p.runningSound = runningSound.cloneNode();
             p.runningSound.volume = 0.25;
             p.runningSound.loop = true;
@@ -490,7 +500,9 @@ function update(time) {
 
         // Advance animation frames
         if (!window.gameFrozen && !window.gamePaused) {
-            p.anim.update(delta);
+            if (!isLateFrame) {
+                p.anim.update(delta);
+            }
         }
 
         // Remote attack ended
@@ -609,7 +621,7 @@ socket.on("playerHit", ({ attackerId, victimId }) => {
     // Local player got hit   
     if (victimId === socket.id) {
         triggerHitReactionLocal(localPlayer, player, blinkSprite);
-        playSwordHit(1.0);
+        playSwordHit(swordHit, 1.0);
         return;
     }
     
@@ -626,13 +638,20 @@ socket.on("playerHP", ({ lobbyId, id, hp}) =>{
 
     // Update local hp bar
     if (id === socket.id) {
-        if (!localPlayer.invuln) {
-            localPlayer.hp = hp;
-            updateHPBarLocal(player, localPlayer);
+        const oldHP = localPlayer.hp;
 
-            if (hp < oldHP && !localPlayer.invuln) {
-                triggerHitReactionLocal(localPlayer, player, blinkSprite); // stun + blink anim
-            }
+        localPlayer.hp = hp;
+        updateHPBarLocal(player, localPlayer);
+
+        // HP went DOWN → hit reaction
+        if (hp < oldHP && !localPlayer.invuln) {
+            triggerHitReactionLocal(localPlayer, player, blinkSprite);
+        }
+
+        // HP went UP → heal sound (optional but consistent)
+        else if (hp > oldHP) {
+            lifeGained.currentTime = 0;
+            lifeGained.play();
         }
         
         return;
