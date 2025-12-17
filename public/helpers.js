@@ -116,7 +116,7 @@ export function triggerHitReactionLocal(localPlayer, playerEl, blinkSprite) {
 export function triggerHitReactionRemote(p, blinkSprite) {
     const t = performance.now();
 
-    // Stun slightly longer for remote players
+    // Stun for remote players
     p.stunned = true;
     p.stunUntil = t + 700;
 

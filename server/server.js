@@ -379,7 +379,7 @@ io.on('connection', (socket) => {
             lobbyId: lobby.id,
             winnerId: lastPlayerId,
             winnerName,
-            roundTime: Math.floor((Date.now() - lobby.roundStartTime) / 1000)
+            roundTime: getTotalElapsedTime(lobby)
         });
 
         // Stop timer
@@ -451,7 +451,7 @@ function checkWinner(lobbyId) {
       lobbyId,
       winnerId,
       winnerName: winner ? users[winnerId].userName : "Nobody",
-      roundTime: Math.floor((Date.now() - lobby.roundStartTime) / 1000)
+      roundTime: getTotalElapsedTime(lobby)
     });
   }
 }
@@ -475,4 +475,14 @@ function spawnHeart(lobby) {
     lobby.currentHeart = { x, y };
 
     io.to(lobby.id).emit("spawnHeart", { x, y });
+}
+
+function getTotalElapsedTime(lobby) {
+  let total = lobby.accumulatedTime || 0;
+
+  if (lobby.roundStartTime) {
+    total += Math.floor((Date.now() - lobby.roundStartTime) / 1000);
+  }
+
+  return total;
 }

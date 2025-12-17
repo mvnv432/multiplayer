@@ -112,6 +112,9 @@ socket.on("gamePaused", ({ lobbyId, by }) => {
 
     window.gamePaused = true;
 
+    const heart = document.getElementById("heart");
+    if (heart) heart.classList.add("hidden");
+
     // Show pause message
     pauseText.textContent = `${by} paused the game`;
     pauseOverlay.classList.remove("pause-hidden");
@@ -136,8 +139,6 @@ const resumeText = document.getElementById("resume-text");
 socket.on("gameResumed", ({ lobbyId, by }) => {
     if (lobbyId !== window.currentLobbyId) return;
 
-    window.gamePaused = false;
-
     // Hide pause window
     pauseOverlay.classList.add("pause-hidden");
 
@@ -151,6 +152,7 @@ socket.on("gameResumed", ({ lobbyId, by }) => {
     // Delay actual resume so popup is visible
     setTimeout(() => {
         resumeOverlay.classList.add("resume-hidden");
+        window.gamePaused = false;
 
         lastUpdateTime = performance.now();
         requestAnimationFrame(update);
@@ -562,8 +564,9 @@ socket.on('players', ({ lobbyId, data }) => {
     initLocalPlayerAnimation(myColor);
 
     // Spawn all current players (excluding self)
-    for (const [id, pos] of Object.entries(data)) {
+    for (const [id, info] of Object.entries(data)) {
         if (id === socket.id) continue; // skip self
+        if (!others[id]) {
         addOtherPlayer(
             id,
             info,
@@ -576,6 +579,7 @@ socket.on('players', ({ lobbyId, data }) => {
             window.playersDataFromServer 
         );
     }
+    }
     // Start game loop after we have our color & animation
     requestAnimationFrame(update);
 });
@@ -586,7 +590,7 @@ socket.on('playerMoved', ({ lobbyId, id, pos }) => {
     if (lobbyId !== window.currentLobbyId) return;
 
     const p = others[id];
-    if (!p) return;
+    if (!p || p.dead) return;
 
     const now = performance.now();
 
@@ -659,7 +663,7 @@ socket.on("playerHP", ({ lobbyId, id, hp}) =>{
 
     // Remote players
     const p = others[id];
-    if (!p) return;
+    if (!p || p.dead) return;
 
     if(p) {
         // Remote players animation + sounds on HP change
@@ -689,6 +693,10 @@ socket.on("playerDied", ({ lobbyId, id }) => {
 
     if (id === socket.id) {
         localDead = true;
+
+         localPlayer.invuln = false;
+        localPlayer.stunned = false;
+        stopBlink(player);
     
         sheepSound.currentTime = 0;
         sheepSound.play();
@@ -707,6 +715,14 @@ socket.on("playerDied", ({ lobbyId, id }) => {
         // Remote player sheepify
         const p = others[id];
         if (p) {
+            const last = p.history[p.history.length - 1];
+            if (last) {
+                p.x = last.x;
+                p.y = last.y;
+            }
+
+            p.history.length = 0; // stop interpolation completely
+            p.dead = true;
             sheepSound.currentTime = 0;
             sheepSound.play();
 
@@ -728,6 +744,8 @@ socket.on('gameOver', ({ lobbyId, winnerName, roundTime }) => {
 });
 
 socket.on("spawnHeart", ({x, y}) => {
+    if (window.gamePaused) return;
+
     let heart = document.getElementById("heart");
 
     if (!heart) {
